@@ -1,0 +1,770 @@
+package com.mycompany.hide1;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.util.Random;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.geom.Ellipse2D;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Stack;
+import javax.swing.JButton;   
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
+public class Hide1 extends JFrame {
+int[][] labirin = new int[][] { // Array untuk Maze
+        {1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1},
+        {1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1},
+        {0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+        {0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1},
+        {0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 3, 0, 1},
+        {0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1},
+        {1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1},
+        {1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1},
+        {1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1},
+        {1, 0, 4, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1},
+        {1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1},
+        //0=jalan
+        //1=tembok
+        //3=Droid_Merah
+        //4=Droid_Hijau
+            
+    };
+
+
+    // Button
+    JButton Droid_Merah;
+    JButton Droid_Hijau;
+    JButton Tambah_Droid;
+    JButton Hapus_Droid;
+    JButton Random_Map;
+    JButton Pandang_Merah;
+    JButton Pandang_Hijau;
+    JButton Solution;
+    JButton Stop;
+    JButton Exit;
+    
+    // Random Array
+    public boolean[][] visited;
+    
+    //gerakan node 3 dan 4
+    private Timer timer;
+    private boolean canMove; // Flag untuk mengizinkan/menolak pergerakan node
+    public boolean foundNode4;
+    private Queue<Point> node3Path;
+    
+
+    private boolean canMoveNode3;
+    private boolean canMoveNode4;
+    private Point node3Position;
+    private Point node4Position;
+    private Point prevNode3Position;
+    private Point prevNode4Position;
+    boolean repaint;
+    public boolean node3Moved; // Flag untuk melacak apakah node 3 sudah dipindahkan
+    private Point prevPosition;
+    
+    public Hide1() {
+        //pengaturan Frame 
+        setTitle("hide and seek");
+        setSize(950,700);
+        setLocationRelativeTo(null);
+        setLayout(null);
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setVisible(true);
+        
+        //menambahkan object button
+        Droid_Merah = new JButton("Random Droid_Merah");
+        Droid_Hijau = new JButton("Random Droid_Hijau");
+        Tambah_Droid = new JButton("Tambah_Droid");
+        Hapus_Droid = new JButton("Hapus_Droid");
+        Random_Map = new JButton("Random map labirin");
+        Pandang_Merah = new JButton("Pandangan Droid_Merah");
+        Pandang_Hijau = new JButton("Pandangan Droid_Hijau");
+        Solution = new JButton("Start");
+        Stop = new JButton("Stop ");
+        Exit = new JButton("Exit");
+        
+        add(Droid_Merah);
+        add(Droid_Hijau);
+        add(Tambah_Droid);
+        add(Hapus_Droid);
+        add(Random_Map);
+        add(Pandang_Merah);
+        add(Pandang_Hijau);
+        add(Solution);
+        add(Stop);
+        add(Exit);
+        
+        // Inisialisasi posisi node 3 dan node 4
+        node3Position = getNodePosition(3);
+        node4Position = getNodePosition(4);
+        
+        //posisi object Button
+        Droid_Merah.setBounds(700, 40, 200, 35);
+        Droid_Hijau.setBounds(700, 100, 200, 35);
+        Tambah_Droid.setBounds(700, 160, 200, 35);
+        Hapus_Droid.setBounds(700, 220, 200, 35);
+        Random_Map.setBounds(700, 280, 200, 35);
+        Pandang_Merah.setBounds(700, 340, 200, 35);
+        Pandang_Hijau.setBounds(700, 400, 200, 35);
+        Solution.setBounds(700, 460, 200, 35);
+        Stop.setBounds(700, 520, 200, 35);
+        Exit.setBounds(700, 580, 200, 35);
+        
+        //jika menekan Button RandomDroid_Merah
+        Droid_Merah.addActionListener((ActionEvent e) -> {
+            int[][] x1 = Droid_Merah();
+            restore(x1);
+            repaint();
+        });
+        
+        
+        //jika menekan Button RandomDroid_Hijau
+        Droid_Hijau.addActionListener((ActionEvent e) -> {
+            int[][] x1 = Droid_Hijau();
+            repaint = true;
+            restore(x1);
+            repaint();
+        });
+        
+        //jika menekan Button Tambah_Droid
+        Tambah_Droid.addActionListener((ActionEvent e) -> {
+            int[][] x1 = Tambah_Droid();
+            restore(x1);
+            repaint();
+        });
+        
+        //jika menekan Button Hapus_Droid
+        Hapus_Droid.addActionListener((ActionEvent e) -> {
+            Hapus_Droid();
+            repaint();
+        });
+        
+        //jika menekan Button Random_Map 
+        Random_Map.addActionListener((ActionEvent e) -> {
+            int[][] x1 = Random_Map();
+            repaint = true;
+            restore(x1);
+            repaint();
+        });
+        
+        //jika menekan Button Pandangan Droid_Hijau
+        Pandang_Merah.addActionListener((ActionEvent e) -> {
+            int[][] x1 = Pandang_Merah();
+            repaint = true;
+            restore(x1);
+            repaint();
+        });
+        
+        //jika menekan Button Pandangan Droid_Hijau
+        Pandang_Hijau.addActionListener((ActionEvent e) -> {
+            int[][] x1 = Pandang_Hijau();
+            repaint = true;
+            restore(x1);
+            repaint();
+        });
+        
+        //jika menekan Button Start 
+        Solution.addActionListener((ActionEvent e) -> {
+            startAnimation();
+        });
+        
+        //jika menekan Button Stop
+        Stop.addActionListener((ActionEvent e) -> {
+            stopAnimation();// Memanggil metode stopAnimation saat tombol "Stop" ditekan
+        });
+        
+         //jika menekan Button Exit
+        Exit.addActionListener((ActionEvent e) -> {
+            System.exit(0); //close the app
+        });
+        
+}
+    
+public void restore(int[][] savedLabirint){
+    for (int i = 0; i < labirin.length; i++){
+        System.arraycopy(savedLabirint[i], 0, labirin[i], 0, labirin.length);
+    }
+}
+
+
+//fungsi Random_Map
+public int[][] Random_Map(){
+    int[][] arr = new int[labirin.length][labirin[0].length];
+
+    // Inisialisasi labirin dengan dinding (node 1)
+    for (int i = 0; i < labirin.length; i++) {
+        for (int j = 0; j < labirin[0].length; j++) {
+            arr[i][j] = 1;
+        }
+    }
+
+    Random random = new Random();
+
+    // Posisi awal kurir (node 3)
+    int startRow = random.nextInt(labirin.length);
+    int startCol = random.nextInt(labirin[0].length);
+    arr[startRow][startCol] = 0;
+
+    // Posisi tujuan (node 4)
+    int destRow = random.nextInt(labirin.length);
+    int destCol = random.nextInt(labirin[0].length);
+    arr[destRow][destCol] = 0;
+
+    generateMaze(startRow, startCol, arr);
+    
+    //mempertahankan posisi Droid_Merah
+     for (int i = 0; i < labirin.length; i++){
+        for (int j = 0; j < labirin[0].length; j++){
+            if(labirin[i][j] == 3){
+               arr[i][j] = 3;
+            }
+        }
+    }
+     //mempertahankan posisi Droid_Hijau
+     for (int i = 0; i < labirin.length; i++){
+        for (int j = 0; j < labirin[0].length; j++){
+            if(labirin[i][j] == 4){
+               arr[i][j] = 4;
+            }
+        }
+    }
+    return arr;
+}
+
+private void generateMaze(int row, int col, int[][] arr) {
+    // Directions: atas, bawah, kiri, kanan
+    int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    Random random = new Random();
+
+    // Acak urutan arah
+    List<Integer> directionOrder = Arrays.asList(0, 1, 2, 3);
+    Collections.shuffle(directionOrder, random);
+
+    for (int dirIndex : directionOrder) {
+        int newRow = row + directions[dirIndex][0] * 2;
+        int newCol = col + directions[dirIndex][1] * 2;
+
+        if (newRow >= 0 && newRow < arr.length && newCol >= 0 && newCol < arr[0].length && arr[newRow][newCol] == 1) {
+            arr[newRow][newCol] = 0; // Jalan
+            arr[row + directions[dirIndex][0]][col + directions[dirIndex][1]] = 0; // Jalan
+            generateMaze(newRow, newCol, arr);
+        }
+    }
+}
+
+//fungsi RandomDroid_Merah
+public int[][] Droid_Merah() {
+    int[][] arr;
+    arr = new int[labirin.length][labirin.length];
+    
+    Random row = new Random();
+    Random col = new Random();
+    
+    for (int i = 0; i < labirin.length; i++) {
+        for (int j = 0; j < labirin[0].length; j++) {
+            
+            switch (labirin[i][j]) {
+                case 1:
+                    arr[i][j] = 0;
+                    break;
+                case 4:
+                    arr[i][j] = 4;
+                    break;
+            }
+        }
+    }
+    
+    for (int i = 0; i < labirin.length; i++) {
+        for (int j = 0; j < labirin[0].length; j++) {
+            if (labirin[i][j] == 3) {
+                
+                while (true) {
+                    int m = row.nextInt(labirin.length) + 0;
+                    int n = col.nextInt(labirin.length) + 0;
+                    if (labirin[m][n] == 0) {
+                        arr[m][n] = 3;
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
+            }
+        }
+    }
+    //mempertahankan posisi Tembok
+     for (int i = 0; i < labirin.length; i++){
+        for (int j = 0; j < labirin[0].length; j++){
+            if(labirin[i][j] == 1){
+               arr[i][j] = 1;
+            }
+        }
+    }
+     
+    return arr;
+}
+
+//fungsi RandomDroid_Hijau
+public int[][] Droid_Hijau() {
+    int[][] arr;
+    arr = new int[labirin.length][labirin.length];
+    
+    Random row = new Random();
+    Random col = new Random();
+    
+    for (int i = 0; i < labirin.length; i++) {
+        for (int j = 0; j < labirin[0].length; j++) {
+            
+            switch (labirin[i][j]) {
+                case 1:
+                    arr[i][j] = 0;
+                    break;
+                case 3:
+                    arr[i][j] = 3;
+                    break;
+            }
+        }
+    }
+    
+    for (int[] labirin1 : labirin) {
+        for (int j = 0; j < labirin[0].length; j++) {
+            if (labirin1[j] == 4) {
+                while (true) {
+                    int m = row.nextInt(labirin.length) + 0;
+                    int n = col.nextInt(labirin.length) + 0;
+                    if (labirin[m][n] == 0) {
+                        arr[m][n] = 4;
+                        break;
+                    } else {
+                        continue;
+                    }
+                }
+            }
+        }
+    }
+     //mempertahankan posisi Tembok
+     for (int i = 0; i < labirin.length; i++){
+        for (int j = 0; j < labirin[0].length; j++){
+            if(labirin[i][j] == 1){
+               arr[i][j] = 1;
+            }
+        }
+    }
+
+    return arr;
+}
+
+//fungsi Tambah Droid_Merah
+ public int[][] Tambah_Droid() {
+    int[][] arr = new int[labirin.length][labirin[0].length];
+    
+    Random row = new Random();
+    Random col = new Random();
+    
+    for (int i = 0; i < labirin.length; i++) {
+        for (int j = 0; j < labirin[0].length; j++) {
+            switch (labirin[i][j]) {
+                case 3 -> arr[i][j] = 3;
+            }
+        }
+    }
+    
+    int droidCount = 0; // Jumlah node 3 yang sudah ditambahkan
+    
+    while (droidCount < 1) { // Ubah angka 3 sesuai dengan jumlah node 3 yang ingin ditambahkan
+        int m = row.nextInt(labirin.length);
+        int n = col.nextInt(labirin[0].length);
+        
+        if (labirin[m][n] == 0) {
+            arr[m][n] = 3 + droidCount;
+            droidCount++;
+        }
+    }
+   
+    
+     //mempertahankan posisi Tembok
+     for (int i = 0; i < labirin.length; i++){
+        for (int j = 0; j < labirin[0].length; j++){
+            if(labirin[i][j] == 1){
+               arr[i][j] = 1;
+            }
+        }
+    }
+     
+     //mempertahankan posisi Droid_hijau
+     for (int i = 0; i < labirin.length; i++){
+        for (int j = 0; j < labirin[0].length; j++){
+            if(labirin[i][j] == 4){
+               arr[i][j] = 4;
+            }
+        }
+    }
+
+    return arr;
+}
+ 
+//fungsi Hapus Droid_Merah
+ public void Hapus_Droid() {
+        List<Point> node3Positions = getNodePositions(3);
+        int node3Count = node3Positions.size();
+
+        if (node3Count > 0) {
+            Random random = new Random();
+            int randomIndex = random.nextInt(node3Count);
+            Point node3Position = node3Positions.get(randomIndex);
+            labirin[node3Position.x][node3Position.y] = 0;
+            node3Positions.remove(randomIndex);
+        }
+    }
+ 
+  private List<Point> getNodePositions(int node) {
+        List<Point> positions = new ArrayList<>();
+
+        for (int i = 0; i < labirin.length; i++) {
+            for (int j = 0; j < labirin[i].length; j++) {
+                if (labirin[i][j] == node) {
+                    positions.add(new Point(i, j));
+                }
+            }
+        }
+
+        return positions;
+    }
+  
+//fungsi Pandangan Droid_Merah
+public int[][] Pandang_Merah() {
+    int[][] arr;
+    arr = new int[labirin.length][labirin.length];
+    
+    for (int i = 0; i < labirin.length; i++) {
+        for (int j = 0; j < labirin[0].length; j++) {
+            
+            switch (labirin[i][j]) {
+                case 0:
+                    arr[i][j] = 0;
+                    break;
+                case 1:
+                    arr[i][j] = 1;
+                    break;
+                case 3:
+                    arr[i][j] = 3;
+                    break;
+                case 4:
+                    arr[i][j] = 0;
+                    break;
+            }
+        }
+    }
+    return arr;
+}
+
+//fungsi Pandangan Droid_Hijau
+public int[][] Pandang_Hijau() {
+    int[][] arr;
+    arr = new int[labirin.length][labirin.length];
+    
+    for (int i = 0; i < labirin.length; i++) {
+        for (int j = 0; j < labirin[0].length; j++) {
+            
+            switch (labirin[i][j]) {
+                case 0:
+                    arr[i][j] = 1;
+                    break;
+                case 1:
+                    arr[i][j] = 1;
+                    break;
+                case 3:
+                    arr[i][j] = 3;
+                    break;
+                case 4:
+                    arr[i][j] = 4;
+                    break;
+            }
+        }
+    }
+    return arr;
+}
+
+    private Point getNodePosition(int node) {
+        for (int row = 0; row < labirin.length; row++) {
+            for (int col = 0; col < labirin[0].length; col++) {
+                if (labirin[row][col] == node) {
+                    return new Point(row, col);
+                }
+            }
+        }
+        return null;
+    }
+
+    private void startAnimation() {
+        canMoveNode3 = true;
+        canMoveNode4 = true;
+
+        timer = new Timer(500, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (canMoveNode3) {
+                    moveNode3();
+                }
+
+                if (canMoveNode4) {
+                    moveNode4();
+                }
+
+                repaint();
+            }
+        });
+        timer.start();
+    }
+
+    private void moveNode3() {
+    int[] dx = {0, 0, 1, -1};
+    int[] dy = {1, -1, 0, 0};
+
+    List<Point> validMoves = new ArrayList<>();
+    Point targetPosition = node4Position; // Node 4 position as the target
+
+    for (int i = 0; i < 4; i++) {
+        int newRow = node3Position.x + dx[i];
+        int newCol = node3Position.y + dy[i];
+
+        if (isPositionValid(newRow, newCol) && !isPrevPosition(newRow, newCol, prevNode3Position)) {
+            validMoves.add(new Point(newRow, newCol));
+        }
+    }
+
+    if (!validMoves.isEmpty()) {
+        Point bestMove = validMoves.get(0);
+        double bestDistance = calculateDistance(bestMove, targetPosition);
+
+        for (Point move : validMoves) {
+            double distance = calculateDistance(move, targetPosition);
+            if (distance < bestDistance) {
+                bestMove = move;
+                bestDistance = distance;
+            }
+        }
+
+        if (bestDistance <= 1) {
+            // Node 3 overlaps Node 4
+            labirin[node4Position.x][node4Position.y] = 3;
+            labirin[node3Position.x][node3Position.y] = 0;
+            canMoveNode3 = false;
+            canMoveNode4 = false;
+            timer.stop();
+            repaint();
+            return; // Exit the method
+        }
+
+        labirin[bestMove.x][bestMove.y] = 3;
+        labirin[node3Position.x][node3Position.y] = 0;
+        prevNode3Position = node3Position;
+        node3Position = bestMove;
+    } else {
+        // Tidak ada gerakan yang valid, coba mencari jalan alternatif
+        Point alternativeMove = findAlternativeMove(node3Position, prevNode3Position);
+        if (alternativeMove != null) {
+            labirin[alternativeMove.x][alternativeMove.y] = 3;
+            labirin[node3Position.x][node3Position.y] = 0;
+            prevNode3Position = node3Position;
+            node3Position = alternativeMove;
+        } else {
+            // Node 3 mentok, kembali ke jalan sebelumnya
+            if (prevNode3Position != null) {
+                labirin[prevNode3Position.x][prevNode3Position.y] = 3;
+                labirin[node3Position.x][node3Position.y] = 0;
+                node3Position = prevNode3Position;
+                prevNode3Position = null;
+            } else {
+                canMoveNode3 = false;
+            }
+        }
+    }
+}
+
+
+private boolean isNode4Visible(int row, int col) {
+    // Mengecek apakah terdapat tembok antara Node 3 dan Node 4
+    if (row == node4Position.x && col == node4Position.y) {
+        return true;
+    }
+
+    int[] dx = {0, 0, 1, -1};
+    int[] dy = {1, -1, 0, 0};
+
+    for (int i = 0; i < 4; i++) {
+        int newRow = row;
+        int newCol = col;
+
+        while (isPositionValid(newRow, newCol)) {
+            newRow += dx[i];
+            newCol += dy[i];
+
+            if (newRow == node4Position.x && newCol == node4Position.y) {
+                return true; // Tembok terhalang, Node 4 dapat terlihat
+            }
+        }
+    }
+
+    return false; // Tidak ada tembok yang terhalang, Node 4 tidak dapat terlihat
+}
+
+
+private double calculateDistance(Point point1, Point point2) {
+    int dx = point1.x - point2.x;
+    int dy = point1.y - point2.y;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+
+
+    private void moveNode4() {
+    int[] dx = { 0, 0, 1, -1 };
+    int[] dy = { 1, -1, 0, 0 };
+
+    List<Point> validMoves = new ArrayList<>();
+
+    for (int i = 0; i < 4; i++) {
+        int newRow = node4Position.x + dx[i];
+        int newCol = node4Position.y + dy[i];
+
+        if (isPositionValid(newRow, newCol) && !isPrevPosition(newRow, newCol, prevNode4Position)
+                && !isNode3Position(newRow, newCol)) {
+            validMoves.add(new Point(newRow, newCol));
+        }
+    }
+
+    if (!validMoves.isEmpty()) {
+        Point bestMove = validMoves.get(0);
+        double bestDistance = calculateDistance(bestMove, node3Position);
+
+        for (Point move : validMoves) {
+            double distance = calculateDistance(move, node3Position);
+            if (distance > bestDistance) {
+                bestMove = move;
+                bestDistance = distance;
+            }
+        }
+
+        labirin[bestMove.x][bestMove.y] = 4;
+        labirin[node4Position.x][node4Position.y] = 0;
+        prevNode4Position = node4Position;
+        node4Position = bestMove;
+    } else {
+        // Tidak ada gerakan yang valid, coba mencari jalan alternatif
+        Point alternativeMove = findAlternativeMove(node4Position, prevNode4Position);
+        if (alternativeMove != null) {
+            labirin[alternativeMove.x][alternativeMove.y] = 4;
+            labirin[node4Position.x][node4Position.y] = 0;
+            prevNode4Position = node4Position;
+            node4Position = alternativeMove;
+        } else {
+            // Node 4 mentok, kembali ke jalan sebelumnya
+            if (prevNode4Position != null) {
+                labirin[prevNode4Position.x][prevNode4Position.y] = 4;
+                labirin[node4Position.x][node4Position.y] = 0;
+                node4Position = prevNode4Position;
+                prevNode4Position = null;
+            } else {
+                canMoveNode4 = false;
+            }
+        }
+    }
+}
+
+
+private Point findAlternativeMove(Point currentPosition, Point previousPosition) {
+    int[] dx = {0, 0, 1, -1};
+    int[] dy = {1, -1, 0, 0};
+
+    List<Point> validMoves = new ArrayList<>();
+
+    for (int i = 0; i < 4; i++) {
+        int newRow = currentPosition.x + dx[i];
+        int newCol = currentPosition.y + dy[i];
+
+        if (isPositionValid(newRow, newCol) && !isPrevPosition(newRow, newCol, previousPosition)) {
+            validMoves.add(new Point(newRow, newCol));
+        }
+    }
+
+    if (!validMoves.isEmpty()) {
+        int randomIndex = (int) (Math.random() * validMoves.size());
+        return validMoves.get(randomIndex);
+    }
+
+    return null;
+}
+
+    private boolean isPositionValid(int row, int col) {
+        return row >= 0 && row < labirin.length && col >= 0 && col < labirin[0].length && labirin[row][col] == 0;
+    }
+
+    private boolean isPrevPosition(int row, int col, Point prevPosition) {
+        return prevPosition != null && row == prevPosition.x && col == prevPosition.y;
+    }
+
+    private boolean isNode3Position(int row, int col) {
+        return row == node3Position.x && col == node3Position.y;
+    }
+
+     private void stopAnimation() {
+        canMove = false; // Menonaktifkan pergerakan node
+        timer.stop(); // Menghentikan timer
+    }
+     
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        g.translate(70, 70);
+
+        Graphics2D g2d = (Graphics2D) g;
+
+        int cellSize = 40;
+
+        for (int i = 0; i < labirin.length; i++) {
+            for (int j = 0; j < labirin[i].length; j++) {
+                int cellValue = labirin[i][j];
+
+                int x = j * cellSize;
+                int y = i * cellSize;
+
+                if (cellValue == 3) {
+                    g2d.setColor(Color.RED);
+                    g2d.fill(new Ellipse2D.Double(x, y, cellSize, cellSize));
+                } else if (cellValue == 4) {
+                    g2d.setColor(Color.GREEN);
+                    g2d.fill(new Ellipse2D.Double(x, y, cellSize, cellSize));
+                } else if (cellValue == 1) {
+                    g2d.setColor(Color.BLACK);
+                    g2d.fillRect(x, y, cellSize, cellSize);
+                } else {
+                    g2d.setColor(Color.WHITE);
+                    g2d.fillRect(x, y, cellSize, cellSize);
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new Hide1();
+            }
+        });
+    }
+}
